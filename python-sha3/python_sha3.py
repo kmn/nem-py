@@ -62,8 +62,8 @@ class Keccak:
 
     self.n_r = 12 + 2 * self.l
 
-    self.block_size = r
-    self.digest_size = n
+    self.block_size = r / 8
+    self.digest_size = n / 8
 
     # Initialize the state of the sponge
     # The state is made up of 25 words, each word being w bits.
