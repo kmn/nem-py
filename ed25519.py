@@ -246,6 +246,11 @@ def Hint(m):
     return sum(2 ** i * bit(h, i) for i in range(2 * b))
 
 
+def Hint_hash(m, hashobj):
+    h = hashobj(m).digest()
+    return sum(2 ** i * bit(h, i) for i in range(2 * b))
+
+
 def signature_unsafe(m, sk, pk):
     """
     Not safe to use with secret keys or secret data.
@@ -260,6 +265,23 @@ def signature_unsafe(m, sk, pk):
     R = scalarmult_B(r)
     S = (r + Hint(encodepoint(R) + pk + m) * a) % l
     return encodepoint(R) + encodeint(S)
+
+def signature_hash_unsafe(m, sk, pk, hashobj):
+    """
+    Not safe to use with secret keys or secret data.
+
+    See module docstring.  This function should be used for testing only.
+    """
+    h = hashobj(sk).digest()
+    a = 2 ** (b - 2) + sum(2 ** i * bit(h, i) for i in range(3, b - 2))
+    r = Hint_hash(
+        intlist2bytes([indexbytes(h, j) for j in range(b // 8, b // 4)]) + m,
+		hashobj
+    )
+    R = scalarmult_B(r)
+    S = (r + Hint_hash(encodepoint(R) + pk + m, hashobj) * a) % l
+    return encodepoint(R) + encodeint(S)
+
 
 
 def isoncurve(P):
