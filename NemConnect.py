@@ -58,14 +58,14 @@ class NemConnect:
 		r = self.sendPost('transaction/prepare', data)
 		return r.ok, r.json()
 
-	def importanceTransferPrepare(self, senderPublicKey, remotePublicKey):
+	def importanceTransferPrepare(self, senderPublicKey, remotePublicKey, doAssign):
 		now = datetime.datetime.utcnow()
 
 		timeStamp = int((now - self.nemEpoch).total_seconds())
 		data = {'type' : 0x801,
 				'version' : 1,
 				'signer' : senderPublicKey,
-				'mode' : 1,
+				'mode' : 1 if doAssign else 2,
 				'remoteAccount' : remotePublicKey,
 				'timeStamp' : timeStamp,
 				'deadline' : timeStamp + 60*10,
