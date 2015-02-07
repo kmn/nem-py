@@ -14,9 +14,26 @@ nickel example usage (node must be BOOTED to execute any nickel commands):
 # node info
 nickel.py info
 
-#start harvesting
+# start harvesting
 nickel.py harvest --unlock PRIVKEY
 
-#send 123 NEMs to gimre
+# send 123 NEMs to gimre
 nickel.py send PRIVKEY TDGIMREMR5NSRFUOMPI5OOHLDATCABNPC5ID2SVA 123000000
+
+# create multisig account
+# (multisig priv key, cosigners public keys....)
+nickel.py multisig-create e8da26bf835b3caca4712b8ca7cf893dce6e1cd1e00fe8601a392fea043f69df \
+  --add d034e5ce0a58c0dbf6c2e4d353e08c6b41e35fc5f60d65983969210d66a3620c \
+        42b5284ee010c94670abfe90f7defcdb8b79e28dc358a2bfea6d0d13d6510548
+
+# create multisig transfer
+# (cosigner priv key, multisig public key, recipient address, amount)
+nickel.py multisig-transfer 3029c55412442244defb01deef360db9b6ddf4779479e1436e67028dc44ca5f7 \
+  2bc0a27779d30862e0ec54de2951a6506ca913165a1bc28f3ce51c7fecfe443f
+  TDPATMAMYAICKQ7SPFFE3TRTHYW2XF773VTTHYUI 1234
+
+# co-sign multisig transaction
+# (cosigners priv key, inner transaction hash)
+nickel.py multisig-signature 823541e7e0a9e61387bcc66dabf3e0b9257ca168437a01907f82c6012ecc896f \
+  7aa836f43db9a0ef29e6ee4e49642522c49a0b702a982cea6b9918ec6c570c95
 ```

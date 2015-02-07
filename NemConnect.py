@@ -3,12 +3,17 @@ import requests
 import base64
 import datetime
 from binascii import hexlify, unhexlify
+from math import ceil,log
 
 class NemConnect:
 	def __init__(self, address, port):
 		self.address = address
 		self.port = port
-		self.nemEpoch = datetime.datetime(2014, 8, 4, 0, 0, 0, 0, None)
+		self.nemEpoch = datetime.datetime(2015, 2, 1, 0, 0, 0, 0, None)
+
+	def getTimeStamp(self):
+		now = datetime.datetime.utcnow()
+		return int((now - self.nemEpoch).total_seconds())
 
 	def nodeInfo(self):
 		r = self.sendGet('node/info', None)
@@ -41,37 +46,85 @@ class NemConnect:
 			return True, None
 		return False, r.json()
 
-	def transferPrepare(self, senderPublicKey, recipientCompressedKey, amount, message):
-		now = datetime.datetime.utcnow()
-
-		timeStamp = int((now - self.nemEpoch).total_seconds())
-		data = {'type' : 0x101,
+	@staticmethod
+	def createData(txtype, senderPublicKey, timeStamp):
+		return {'type' : txtype,
 				'version' : 1,
 				'signer' : senderPublicKey,
+				'timeStamp' : timeStamp,
+				'deadline' : timeStamp + 60*10
+				}
+
+	@staticmethod
+	def minFee(amount):
+		print amount
+		return max(2, ceil(amount / 12500 + log(2*amount) / 5))
+
+	def constructTransfer(self, senderPublicKey, recipientCompressedKey, amount, message):
+		timeStamp = self.getTimeStamp()
+		data = NemConnect.createData(0x101, senderPublicKey, timeStamp)
+		fee = NemConnect.minFee(amount / 100000.0) 
+		custom = {
 				'recipient' : recipientCompressedKey,
 				'amount' : amount,
-				'timeStamp' : timeStamp,
-				'deadline' : timeStamp + 60*10,
-				'fee': (amount/100 + 5),
+				'fee': fee,
 				'message' : { 'type': 1, 'payload':hexlify(message) }
-				}
-		r = self.sendPost('transaction/prepare', data)
+		}
+		entity = dict(data.items() + custom.items())
+		return entity
+
+	def transferPrepare(self, senderPublicKey, recipientCompressedKey, amount, message):
+		entity = self.constructTransfer(senderPublicKey, recipientCompressedKey, amount, message)
+		r = self.sendPost('transaction/prepare', entity)
 		return r.ok, r.json()
 
 	def importanceTransferPrepare(self, senderPublicKey, remotePublicKey, doAssign):
-		now = datetime.datetime.utcnow()
-
-		timeStamp = int((now - self.nemEpoch).total_seconds())
-		data = {'type' : 0x801,
-				'version' : 1,
-				'signer' : senderPublicKey,
+		timeStamp = self.getTimeStamp()
+		data = NemConnect.createData(0x801, senderPublicKey, timeStamp)
+		custom = {
 				'mode' : 1 if doAssign else 2,
 				'remoteAccount' : remotePublicKey,
-				'timeStamp' : timeStamp,
-				'deadline' : timeStamp + 60*10,
 				'fee': 1000000,
 				}
-		r = self.sendPost('transaction/prepare', data)
+		entity = dict(data.items() + custom.items())
+		r = self.sendPost('transaction/prepare', entity)
+		return r.ok, r.json()
+
+	def multisigCreatePrepare(self, senderPublicKey, cosignatories):
+		timeStamp = self.getTimeStamp()
+		data = NemConnect.createData(0x1001, senderPublicKey, timeStamp)
+		custom = {
+				'fee' : 6000000*(len(cosignatories) + 1),
+				'modifications' : [
+					{'modificationType': 1, 'cosignatoryAccount' : publicKey }
+					for publicKey in cosignatories
+				]
+		}
+		entity = dict(data.items() + custom.items())
+		r = self.sendPost('transaction/prepare', entity)
+		return r.ok, r.json()
+
+	def multisigTransferPrepare(self, senderPublicKey, multisig, recipientCompressedKey, amount, message):
+		timeStamp = self.getTimeStamp()
+		data = NemConnect.createData(0x1004, senderPublicKey, timeStamp)
+		transfer = self.constructTransfer(multisig, recipientCompressedKey, amount, message)
+		custom = {
+				'fee' : 123,
+				'otherTrans' : transfer
+		}
+		entity = dict(data.items() + custom.items())
+		r = self.sendPost('transaction/prepare', entity)
+		return r.ok, r.json()
+
+	def multisigSignaturePrepare(self, senderPublicKey, txHash):
+		timeStamp = self.getTimeStamp()
+		data = NemConnect.createData(0x1002, senderPublicKey, timeStamp)
+		custom = {
+				'fee' : 123,
+				'otherHash' : { 'data': txHash }
+		}
+		entity = dict(data.items() + custom.items())
+		r = self.sendPost('transaction/prepare', entity)
 		return r.ok, r.json()
 
 	def transferAnnounce(self, transferData, transferSignature):
