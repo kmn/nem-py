@@ -53,8 +53,9 @@ multisigTransferParser.add_argument("to", metavar='ADDRESS', help="recipient's a
 multisigTransferParser.add_argument("amount", metavar="AMOUNT", type=int, help="amount in microNEMs")
 
 multisigSignatureParser = sub.add_parser('multisig-signature', help='multisig signature')
-multisigSignatureParser .add_argument("key", metavar='PRIVKEY', action=PrivateKeyAction, help="cosigners's private key")
-multisigSignatureParser .add_argument("hash", metavar='HASH', help="cosigned transaction hash")
+multisigSignatureParser.add_argument("key", metavar='PRIVKEY', action=PrivateKeyAction, help="cosigners's private key")
+multisigSignatureParser.add_argument("multisig", metavar='ADDRESS', help="multisig account's address (not public-key)")
+multisigSignatureParser.add_argument("hash", metavar='HASH', help="cosigned transaction hash")
 
 multisigModificationParser = sub.add_parser('multisig-modification', help='multisig modification')
 multisigModificationParser.add_argument("key", metavar='PRIVKEY', action=PrivateKeyAction, help="cosigners's private key")
@@ -140,10 +141,19 @@ elif args.sub == 'multisig-transfer':
 
 elif args.sub == 'multisig-signature':
 	privkey = args.key
+	multisig = args.multisig
 	txHash = args.hash
 	a = Account(privkey)
 	print " [+] PREPARING MULTISIG SIGNATURE"
-	ok, j = c.multisigSignaturePrepare(a.getHexPublicKey(), txHash)
+	ok, j = c.multisigSignaturePrepare(a.getHexPublicKey(), multisig, txHash)
+
+elif args.sub == 'multisig-modification':
+	privkey = args.key
+	multisig = args.multisig
+	remove = args.rem
+	a = Account(privkey)
+	print " [+] PREPARING MULTISIG MODIFICATION REMOVAL"
+	ok, j = c.multisigModificationPrepare(a.getHexPublicKey(), multisig, remove)
 
 if ok and ('data' in j):
 	signAndAnnounceTransaction(c, j)
