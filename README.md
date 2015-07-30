@@ -6,6 +6,9 @@ Tools provided in this package should be considered **TEST ONLY**.
 We've spared no effort to make nickel compatible with NEM software, nevertheles
 nickel might produce incorrect results, NEM development team does NOT take ANY responsibility for any damages.
 
+That being said, nickel passes all the tests from nem-test-vectors (https://github.com/NewEconomyMovement/nem-test-vectors),
+see nem\_test\_vectors.py for details.
+
 Keep in mind ed25519 implementation used is sample only and must NOT be used in security-related applications.
 
 
@@ -49,11 +52,15 @@ nickel.py multisig-signature 823541e7e0a9e61387bcc66dabf3e0b9257ca168437a01907f8
 
 ```
 # testing vectors
+nem_test_vectors.py --test-sha3-256-file ..\nem-test-vectors\0.test-sha3-256.dat
+test: 1984
+2000 PASSED
+
 nem_test_vectors.py --test-keys-file ..\nem-test-vectors\1.test-keys.dat
 test: 9982
 10000 PASSED
 
-nem_test_vectors.py --test-sha3-256-file ..\nem-test-vectors\0.test-sha3-256.dat
-test: 1984
-2000 PASSED
+nem_test_vectors.py --test-sign-file ..\nem-test-vectors\2.test-sign.dat
+test: 9982
+10000 PASSED
 ```
