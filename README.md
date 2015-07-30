@@ -3,7 +3,8 @@ Nickel tools
 
 Tools provided in this package should be considered **TEST ONLY**.
 
-They might produce incorrect results, NEM development team does NOT take ANY responsibility for any damages.
+We've spared no effort to make nickel compatible with NEM software, nevertheles
+nickel might produce incorrect results, NEM development team does NOT take ANY responsibility for any damages.
 
 Keep in mind ed25519 implementation used is sample only and must NOT be used in security-related applications.
 
@@ -18,7 +19,14 @@ nickel.py info
 nickel.py harvest --unlock PRIVKEY
 
 # send 123 NEMs to gimre
-nickel.py send PRIVKEY TDGIMREMR5NSRFUOMPI5OOHLDATCABNPC5ID2SVA 123000000
+# (private key, recipient address, amount)
+nickel.py transfer 3029c55412442244defb01deef360db9b6ddf4779479e1436e67028dc44ca5f7 \
+  TDGIMREMR5NSRFUOMPI5OOHLDATCABNPC5ID2SVA 123000000
+
+# associate delegated harvesting account
+# (private key, delegated harvesting account public key)
+nickel.py remote 3029c55412442244defb01deef360db9b6ddf4779479e1436e67028dc44ca5f7 \
+  629c2364f119c7d1e07ba4461938b23dabc65726d60b57a09c67d3c8609ad599
 
 # create multisig account
 # (multisig priv key, cosigners public keys....)
@@ -27,9 +35,9 @@ nickel.py multisig-create e8da26bf835b3caca4712b8ca7cf893dce6e1cd1e00fe8601a392f
         42b5284ee010c94670abfe90f7defcdb8b79e28dc358a2bfea6d0d13d6510548
 
 # create multisig transfer
-# (cosigner priv key, multisig public key, recipient address, amount)
-nickel.py multisig-transfer 3029c55412442244defb01deef360db9b6ddf4779479e1436e67028dc44ca5f7 \
-  2bc0a27779d30862e0ec54de2951a6506ca913165a1bc28f3ce51c7fecfe443f
+# (--multisig multisig public key, cosigner priv key, recipient address, amount)
+nickel.py transfer --multisig 2bc0a27779d30862e0ec54de2951a6506ca913165a1bc28f3ce51c7fecfe443f \
+  3029c55412442244defb01deef360db9b6ddf4779479e1436e67028dc44ca5f7 \
   TDPATMAMYAICKQ7SPFFE3TRTHYW2XF773VTTHYUI 1234
 
 # co-sign multisig transaction

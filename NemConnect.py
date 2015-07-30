@@ -3,7 +3,7 @@ import requests
 import base64
 import datetime
 from binascii import hexlify, unhexlify
-from math import ceil,log
+from math import floor,ceil,log,atan
 
 MAIN_NET_VERSION = 0x68000001
 TEST_NET_VERSION = 0x98000001
@@ -61,23 +61,35 @@ class NemConnect:
 
 	@staticmethod
 	def minFee(amount):
-		print amount
 		return max(2, ceil(amount / 12500 + log(2*amount) / 5))
 
-	def constructTransfer(self, senderPublicKey, recipientCompressedKey, amount, message):
+	def _constructTransfer(self, senderPublicKey, recipientCompressedKey, amount, message):
 		timeStamp = self.getTimeStamp()
 		data = NemConnect.createData(0x101, senderPublicKey, timeStamp)
-		fee = NemConnect.minFee(amount / 100000.0) 
+		msgFee = max(1, len(message) / 16) * 2
+		numNem = floor(amount / 1000000.0) 
+		fee = int(max(10 - numNem, 2, int(atan(numNem / 150000.0) * 3 * 33)))
 		custom = {
 				'recipient' : recipientCompressedKey,
 				'amount' : amount,
-				'fee': fee,
+				'fee': (fee+msgFee)*1000000,
 				'message' : { 'type': 1, 'payload':hexlify(message) }
 		}
 		entity = dict(data.items() + custom.items())
 		return entity
 
-	def constructModification(self, senderPublicKey, cosignatories):
+	def _constructImportanceTransfer(self, senderPublicKey, remotePublicKey, doAssign):
+		timeStamp = self.getTimeStamp()
+		data = NemConnect.createData(0x801, senderPublicKey, timeStamp)
+		custom = {
+				'mode' : 1 if doAssign else 2,
+				'remoteAccount' : remotePublicKey,
+				'fee': 8000000,
+				}
+		entity = dict(data.items() + custom.items())
+		return entity
+
+	def _constructModification(self, senderPublicKey, cosignatories):
 		timeStamp = self.getTimeStamp()
 		data = NemConnect.createData(0x1001, senderPublicKey, timeStamp)
 		custom = {
@@ -90,22 +102,34 @@ class NemConnect:
 		entity = dict(data.items() + custom.items())
 		return entity
 
-	def transferPrepare(self, senderPublicKey, recipientCompressedKey, amount, message):
-		entity = self.constructTransfer(senderPublicKey, recipientCompressedKey, amount, message)
+	def _prepare(self, entity):
 		r = self.sendPost('transaction/prepare', entity)
 		return r.ok, r.json()
 
-	def importanceTransferPrepare(self, senderPublicKey, remotePublicKey, doAssign):
+	def _multisigWrapper(self, senderPublicKey, entity):
 		timeStamp = self.getTimeStamp()
-		data = NemConnect.createData(0x801, senderPublicKey, timeStamp)
+		data = NemConnect.createData(0x1004, senderPublicKey, timeStamp)
 		custom = {
-				'mode' : 1 if doAssign else 2,
-				'remoteAccount' : remotePublicKey,
-				'fee': 8000000,
-				}
+				'fee' : 18000000,
+				'otherTrans' : entity
+		}
 		entity = dict(data.items() + custom.items())
-		r = self.sendPost('transaction/prepare', entity)
-		return r.ok, r.json()
+		print " {+} multisig wrapped"
+		return entity
+
+	def prepareTransfer(self, senderPublicKey, multisigPublicKey, recipientCompressedKey, amount, message):
+		actualSender = multisigPublicKey or senderPublicKey
+		entity = self._constructTransfer(actualSender, recipientCompressedKey, amount, message)
+		if multisigPublicKey:
+			entity = self._multisigWrapper(senderPublicKey, entity)
+		return self._prepare(entity)
+
+	def prepareImportanceTransfer(self, senderPublicKey, multisigPublicKey, remotePublicKey, doAssign):
+		actualSender = multisigPublicKey or senderPublicKey
+		entity = self._constructImportanceTransfer(actualSender, remotePublicKey, doAssign)
+		if multisigPublicKey:
+			entity = self._multisigWrapper(senderPublicKey, entity)
+		return self._prepare(entity)
 
 	def multisigCreatePrepare(self, senderPublicKey, cosignatories):
 		timeStamp = self.getTimeStamp()
@@ -133,18 +157,6 @@ class NemConnect:
 		r = self.sendPost('transaction/prepare', entity)
 		return r.ok, r.json()
 
-
-	def multisigTransferPrepare(self, senderPublicKey, multisig, recipientCompressedKey, amount, message):
-		timeStamp = self.getTimeStamp()
-		data = NemConnect.createData(0x1004, senderPublicKey, timeStamp)
-		transfer = self.constructTransfer(multisig, recipientCompressedKey, amount, message)
-		custom = {
-				'fee' : 18000000,
-				'otherTrans' : transfer
-		}
-		entity = dict(data.items() + custom.items())
-		r = self.sendPost('transaction/prepare', entity)
-		return r.ok, r.json()
 
 	def multisigSignaturePrepare(self, senderPublicKey, multisigAddress, txHash):
 		timeStamp = self.getTimeStamp()
