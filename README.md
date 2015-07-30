@@ -45,3 +45,15 @@ nickel.py transfer --multisig 2bc0a27779d30862e0ec54de2951a6506ca913165a1bc28f3c
 nickel.py multisig-signature 823541e7e0a9e61387bcc66dabf3e0b9257ca168437a01907f82c6012ecc896f \
   7aa836f43db9a0ef29e6ee4e49642522c49a0b702a982cea6b9918ec6c570c95
 ```
+
+
+```
+# testing vectors
+nem_test_vectors.py --test-keys-file ..\nem-test-vectors\1.test-keys.dat
+test: 9982
+10000 PASSED
+
+nem_test_vectors.py --test-sha3-256-file ..\nem-test-vectors\0.test-sha3-256.dat
+test: 1984
+2000 PASSED
+```
