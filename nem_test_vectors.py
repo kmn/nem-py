@@ -13,6 +13,7 @@ parser = argparse.ArgumentParser(description='nem test vectors')
 g = parser.add_mutually_exclusive_group()
 g.add_argument('--test-sha3-256-file', metavar='filename', help='test sha3 implementation')
 g.add_argument('--test-keys-file', metavar='filename', help='test public and address generation')
+g.add_argument('--test-sign-file', metavar='filename', help='test signing')
 
 def verifySha3_256(line):
 	"""^: ([0-9a-f]+) : ([0-9]{2,3}) : ([0-9a-f]+)$"""
@@ -42,13 +43,11 @@ def verifyKey(line):
 	if not res:
 		return False
 
-	privateKeyBin = res.group(1)
-
+	privateKeyHex = res.group(1)
 	expectedPublic = unhexlify(res.group(3))
 	expectedAddress = res.group(4)
 
-	account = Account(privateKeyBin)
-	computedPublic = account.pk
+	account = Account(privateKeyHex)
 	if account.pk == expectedPublic:
 		if account.address == expectedAddress:
 			return True
@@ -60,9 +59,42 @@ def verifyKey(line):
 
 	else:
 		print('Failed public from private:')
-		print('  computed public:' + hexlify(computedPublic))
+		print('  computed public:' + hexlify(accountp.pk))
 		print('  expected public:' + hexlify(expectedPublic))
 		return False
+
+def verifySign(line):
+	""": ([a-f0-9]+) : ([a-f0-9]+) : ([a-f0-9]+) : ([0-9]{2}) : ([a-f0-9]+)$"""
+	f = inspect.currentframe()
+	rematch = f.f_back.f_globals[f.f_code.co_name].__doc__
+	res = re.match(rematch, line)
+	if not res:
+		return False
+
+	privateKeyHex = res.group(1)
+	expectedPublic = unhexlify(res.group(2))
+	expectedSignature = unhexlify(res.group(3))
+	dataLength = int(res.group(4))
+	data = unhexlify(res.group(5))
+	assert(len(data) == dataLength)
+
+	account = Account(privateKeyHex)
+	if account.pk == expectedPublic:
+		computedSignature = account.sign(data)
+		if computedSignature == expectedSignature:
+			return True
+		else:
+			print('Failed when calculating signature:')
+			print('  computed signature:' + hexlify(computedSignature))
+			print('  expected signature:' + hexlify(expectedSignature))
+			return False
+
+	else:
+		print('Failed public from private:')
+		print('  computed public:' + hexlify(account.pk))
+		print('  expected public:' + hexlify(expectedPublic))
+		return False
+
 
 def testFile(filename, cbfun):
 	with open(filename, 'r') as f:
@@ -88,3 +120,5 @@ if args.test_sha3_256_file:
 	testFile(args.test_sha3_256_file, verifySha3_256)
 elif args.test_keys_file:
 	testFile(args.test_keys_file, verifyKey)
+elif args.test_sign_file:
+	testFile(args.test_sign_file, verifySign)
