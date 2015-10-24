@@ -1,5 +1,16 @@
-Nickel tools
-============
+NEM-py
+======
+
+NEM-py is collection of useful python scripts, that may be used
+to create and send transactions in nem network.
+
+Most important elements are:
+ * Account.py - that wraps (private, public, address) triplet, and that is able to sign binary data
+ * NemConnect.py - connector to nem network, that wraps data needed to send to nis server in a more convenient api
+ * nickel.py - command line testing tool using the two above
+
+nickel
+------
 
 Tools provided in this package should be considered **TEST ONLY**.
 
