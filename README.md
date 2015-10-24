@@ -4,6 +4,9 @@ NEM-py
 NEM-py is collection of useful python scripts, that may be used
 to create and send transactions in nem network.
 
+As of now, the tools require trusted/local NIS server, but it might change if
+binary serialization will be added to the tools.
+
 Most important elements are:
  * Account.py - that wraps (private, public, address) triplet, and that is able to sign binary data
  * NemConnect.py - connector to nem network, that wraps data needed to send to nis server in a more convenient api
