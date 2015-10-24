@@ -12,13 +12,12 @@
 # You should have received a copy of the CC0 Public Domain Dedication along
 # with this software. If not, see
 # <http://creativecommons.org/publicdomain/zero/1.0/>.
+import ed25519
+
 import binascii
 import codecs
 import os
-
 import pytest
-
-import ed25519
 
 
 def ed25519_known_answers():
@@ -76,11 +75,11 @@ def test_ed25519_kat(secret_key, public_key, message, signed, signature):
             forgedm = b"x"
         else:
             forgedm = ed25519.intlist2bytes([
-                ed25519.indexbytes(m, i) + (i == len(m) - 1)
-                for i in range(len(m))
-            ])
+                                                ed25519.indexbytes(m, i) + (i == len(m) - 1)
+                                                for i in range(len(m))
+                                                ])
     except ValueError:
-        # TODO: Yes this means that we "pass" a test if we can't generate a
+        # Yes this means that we "pass" a test if we can't generate a
         # forged message. This matches the original test suite, it's
         # unclear if it was intentional there or not.
         pass
@@ -104,4 +103,3 @@ def test_checkparams():
     x, y, z, t = P = ed25519.scalarmult(ed25519.B, ed25519.l)
     assert ed25519.isoncurve(P)
     assert (x, y) == (0, z)
-

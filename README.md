@@ -64,3 +64,46 @@ nem_test_vectors.py --test-sign-file ..\nem-test-vectors\2.test-sign.dat
 test: 9982
 10000 PASSED
 ```
+
+
+mosaics
+=======
+
+```
+# create namespace fizz
+nickel.py namespace <PRIVATE-KEY> fizz
+
+# create sub-namespace buzz inside fizz
+nickel.py namespace <PRIVATE-KEY> fizz.buzz
+
+# create mosaic Fizzier inside owned namespace with description
+# created mosaic has following 'default' properties:
+#   {'divisibility':2, 'initialSupply':1000000, 'supplyMutable':True, 'transferable':True}
+nickel.py mosaic <PRIVATE-KEY> fizz.buzz.Fizzier "Fizzier is very advanced fizz buzz implementation"
+
+# add or remove some mosaics:
+nickel.py mosaic-supply --create <PRIVATE-KEY> fizz.buzz.Fizzier 1000
+nickel.py mosaic-supply --destroy <PRIVATE-KEY> fizz.buzz.Fizzier 2000
+
+# transfer mosaics
+nickel.py transfer --mosaic fizz.buzz.Fizzier:1000:100 <PRIVATE-KEY> TBLOODPLWOWMZ2TARX4RFPOSOWLULHXMROBN2WXI 1000000
+
+# this requires some explanation, this will send 10 mosaics (cause divisibility == 2), to bloody rookie,
+# the third argument is additional transfer fee, unfortunatelly nickel right now is unable to calculate
+# that fee, so if too small fee will be passed, error will be returned, i.e
+#
+
+nickel.py transfer --mosaic games.pong.Paddles:1000:50 <PRIV KEY> TBLOODPLWOWMZ2TARX4RFPOSOWLULHXMROBN2WXI 1000000
+ [+] PREPARING TRANSACTION
+Attached mosaic: [{'quantity': 1000, 'mosaicId': {'namespaceId': 'games.pong', 'name': 'Paddles'}}]
+ [!] prepare failed:
+{
+  "status": 400,
+  "timeStamp": 11964270,
+  "message": "FAILURE_INSUFFICIENT_FEE",
+  "error": "Bad Request"
+}
+
+# last argument in transfer is amount, and it specifies how many "parts" should be send, (it must be multiple of 1 XEM == 1000000 uXem)
+
+```
