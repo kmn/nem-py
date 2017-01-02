@@ -131,7 +131,20 @@ class NemConnect:
 
     @staticmethod
     def calcMinFee(numNem):
-        return int(max(10 - numNem, 2, int(atan(numNem / 150000.0) * 3 * 33)))
+        '''
+        calcurate transfer fee
+        https://forum.nem.io/t/nem-update-0-6-82-lower-fees-and-new-api/2979
+        '''
+        if numNem < 20000:
+            fee = 1;
+        elif numNem > 250000:
+            fee = 25;
+        else:
+            fee = floor(numNem / 1000);
+        return fee
+
+    def calcMessageFee(numNem):
+        return floor(len(message) / 32) + 1
 
     def _constructTransfer(self, senderPublicKey, recipientCompressedKey, amount, message, mosaics, mosaicsFee):
         timeStamp = self.getTimeStamp()
